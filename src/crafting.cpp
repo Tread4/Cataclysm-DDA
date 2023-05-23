@@ -119,9 +119,12 @@ static bool crafting_allowed( const Character &p, const recipe &rec )
         return false;
     }
 
-    if( p.lighting_craft_speed_multiplier( rec ) <= 0.0f ) {
-        add_msg( m_info, _( "You can't see to craft!" ) );
-        return false;
+    if( p->is_player() ) {
+        // next check doesn't work for NPCs because it is counted for player's submap and z-level only
+        if( p.lighting_craft_speed_multiplier( rec ) <= 0.0f ) {
+            add_msg( m_info, _( "You can't see to craft!" ) );
+            return false;
+        }
     }
 
     if( rec.category == "CC_BUILDING" ) {
@@ -2306,12 +2309,14 @@ ret_val<void> Character::can_disassemble( const item &obj, const read_only_visit
 
     const recipe &r = recipe_dictionary::get_uncraft( ( obj.typeId() == itype_disassembly ) ?
                       obj.components.only_item().typeId() : obj.typeId() );
-
-    // check sufficient light
-    if( lighting_craft_speed_multiplier( r ) == 0.0f ) {
-        return ret_val<void>::make_failure( _( "You can't see to craft!" ) );
+    if( p->is_player() ) {
+        // next check doesn't work for NPCs because it is counted for player's submap and z-level only
+        // check sufficient light
+        if( lighting_craft_speed_multiplier( r ) == 0.0f ) {
+            return ret_val<void>::make_failure( _( "You can't see to craft!" ) );
+        }
     }
-
+    
     // refuse to disassemble rotten items
     if( obj.goes_bad() && obj.rotten() ) {
         return ret_val<void>::make_failure( _( "It's rotten, I'm not taking that apart." ) );
